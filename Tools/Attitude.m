@@ -51,11 +51,11 @@ classdef Attitude
             %         If the pitch angle (theta) is vanishingly close to +/- pi/2,
             %         the elements of euler_angle will be filled with NaN (indeterminate).
             %         -pi/2 <= pitch <= pi/2
-			%         if dcm(3,1) <= -0.999 then
-			%         (heading - roll) will be stored in heading and NaN in roll
-			%         if dcm(3,1) >= 0.999
-			%         (heading + roll) will be stored in heading and NaN in roll
-			%         Ref: Starpdown Analytics by Savage.
+            %         if dcm(3,1) <= -0.999 then
+            %         (heading - roll) will be stored in heading and NaN in roll
+            %         if dcm(3,1) >= 0.999
+            %         (heading + roll) will be stored in heading and NaN in roll
+            %         Ref: Starpdown Analytics by Savage.
             
             if (nargin < 1)
                 error('insufficient number of input arguments!')
@@ -67,20 +67,20 @@ classdef Attitude
                 error('Invalid Matrix Dimension Input!')
             end
 
-			pitch = atan(-dcm(3,1)/sqrt(dcm(3,2)^2 + dcm(3,3)^2));
+            pitch = atan(-dcm(3,1)/sqrt(dcm(3,2)^2 + dcm(3,3)^2));
 
-			if dcm(3,1) <= -0.999
-			    roll = NaN;
-			    heading = atan2((dcm(2,3)-dcm(1,2)),(dcm(1,3)+dcm(2,2)));
-			elseif dcm(3,1) >= 0.999
-			    roll = NaN;
-			    heading = pi + atan2((dcm(2,3)+dcm(1,2)),(dcm(1,3)-dcm(2,2)));
-			else
-			    roll = atan2(dcm(3,2), dcm(3,3));
-			    heading = atan2(dcm(2,1), dcm(1,1));
-			end
+            if dcm(3,1) <= -0.999
+                roll = NaN;
+                heading = atan2((dcm(2,3)-dcm(1,2)),(dcm(1,3)+dcm(2,2)));
+            elseif dcm(3,1) >= 0.999
+                roll = NaN;
+                heading = pi + atan2((dcm(2,3)+dcm(1,2)),(dcm(1,3)-dcm(2,2)));
+            else
+                roll = atan2(dcm(3,2), dcm(3,3));
+                heading = atan2(dcm(2,1), dcm(1,1));
+            end
 
-			euler = [roll; pitch; heading];
+            euler = [roll; pitch; heading];
         end
         %-----------------------------------------------------------
         

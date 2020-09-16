@@ -4,8 +4,8 @@
 %  Method Index : localNav , buildState
 
 %% TODO
-% Add gravity model  ~ Line 168
-% Add 4th Runge Kutta Integration ~ integralOpt ~ Line 130
+% Add gravity model  ~ Line 179
+% Add 4th Runge Kutta Integration ~ integralOpt ~ Line 140
 
 %%
 classdef INS
@@ -26,12 +26,12 @@ classdef INS
     
     properties
         Position;		% position
-		Velocity;		% velocity
-		R;		% R^g_b - Rotational Matrix Transform vector from body frame to global frame (ECEF, NED,...)
-		Quaternion;		% q^g_b - Quaternion Transform vector from body frame to global frame (ECEF, NED,...)
-		biasAccel;		% bias of accelerometer
-		biasGyro;		% bias of gyro
-		gVec;		% gravity at {G}
+        Velocity;		% velocity
+        R;		% R^g_b - Rotational Matrix Transform vector from body frame to global frame (ECEF, NED,...)
+        Quaternion;		% q^g_b - Quaternion Transform vector from body frame to global frame (ECEF, NED,...)
+        biasAccel;		% bias of accelerometer
+        biasGyro;		% bias of gyro
+        gVec;		% gravity at {G}
         % 		phi;	% ... 
     end
     
