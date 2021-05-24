@@ -32,6 +32,7 @@ dTcam = 1/20; Ncam = Tsim/dTcam;
 intOpt = '2ndOrder';
 flag = 'meter';
 randomWalk = -0.0001;
+order = 'PVQ';
 
 %% Extract data from dataset
 % gT.Time = time;
@@ -58,7 +59,7 @@ for i = 1:1:length(gT.Time)
     accel_noise(:, i) =  measurementCleaned.IMU{i}.Accel;
     meas = [rate_noise(:, i) , accel_noise(:, i)];
 
-    [state, preState, Fk] = INS.localNav(state, oldState, meas, dt, intOpt, flag, i, randomWalk);
+    [state, preState, Fk] = INS.localNav(state, oldState, meas, dt, intOpt, flag, i, randomWalk, order);
     oldState = preState;
     %     ep(i) = rms((state.Velocity(3) - groundTruth.Velocity(3, i)), 2);
     %     foo = Attitude.dcm2euler(state.R);
