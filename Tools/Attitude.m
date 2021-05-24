@@ -3,7 +3,7 @@
 %  e-Mail : hoangvietdo@sju.ac.kr
 %  Method Index : dcm2euler , dcm2quat , dcmNormalize , euler2dcm , euler2quat
 %             quat2dcm , quatConjugate , quatMultiply , quatLeftMultiply
-%             quatRightMultiply , quatIntegrateRK4 , omegaMat, rvec2quat
+%             quatRightMultiply , quatIntegrateRK4 , omegaMat, rvec2quat , quatCorrectionIKF
 
 %% TODO
 
@@ -20,6 +20,8 @@ classdef Attitude
     %                        of Electrical Engineers, London, 1997.
     %                   2.  M. D. Shuster. Survey of attitude representations. Journal of the
     %                        Astronautical Sciences, 41(4):439–517, 1993.
+    %                   3. Savage, Paul G. Strapdown analytics. Vol. 2. Maple Plain, 
+    %                       MN: Strapdown Associates, 2000.
     
     properties
     end
@@ -472,10 +474,14 @@ classdef Attitude
             c = quat(3);
             d = quat(4);
             
-            fooMatrix = [ b c d;...
-                -a d -c;...
-                -d -a b;...
-                c -b -a];
+%             fooMatrix = [ b c d;...
+%                 -a d -c;...
+%                 -d -a b;...
+%                 c -b -a];
+            fooMatrix = [ -b -c -d;...
+                a d -c;...
+                -d a b;...
+                c -b a];
             
             quatCorrected = quat + 0.5 * fooMatrix * deltaAttitude;
             quatCorrected = Attitude.quatNormalize(quatCorrected);

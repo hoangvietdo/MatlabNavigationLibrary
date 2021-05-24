@@ -1,4 +1,4 @@
-%% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
+ %% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
 %  Author : Viet
 %  e-Mail : hoangvietdo@sju.ac.kr
 %  Method Index : localNav , buildState
@@ -36,7 +36,7 @@ classdef INS
     end
     
     methods(Static)
-        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, integralOpt, flag)            
+        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, integralOpt, flag, timeStamp,randomWalk,order)            
             
             % Local Navigation frame - NED INS mechanization
             % Ref 1 - Page 32 + 47 + 342
@@ -63,6 +63,11 @@ classdef INS
             % Check the flag
             if(isempty(flag))
                 flag = 'meter';
+            end
+            
+            % Check order
+            if(isempty(order))
+                order = 'PVQ';
             end
             
             % Check the integralOpt
@@ -93,11 +98,10 @@ classdef INS
                     [Rn, Re] = radiusWGS84(pnb(1));
                     wn_ie = [w_e*cos(pnb(1)), 0, -w_e*sin(pnb(1))]'; % Eq. 3.72
                     wn_en = [vnb(2)/(Re + pnb(3)), -vnb(1)/(Rn + pnb(3)), -vnb(2)*tan(pnb(1))/(Re + pnb(3))]'; % Eq. 3.87
+                
                 case 'meter'
                     wn_ie = zeros(3, 1);
                     wn_en = zeros(3, 1);
-                    Rn = INS.R0;
-                    Re = INS.R0;
             end
             
             wn_in = wn_ie + wn_en;
@@ -108,38 +112,78 @@ classdef INS
             sigma = wb_nb * dt;
             rk = Attitude.rvec2quat(sigma);
             updateQnb = Attitude.quatMultiply(qnb, rk);
+            
+%             temp = Attitude.quat2euler(updateQnb);
+%             temp_ = temp;
+%             temp_(1) = -temp(1);
+%             temp_(2) = -temp(2);
+%             temp_(3) = -temp(3);
+%             updateRnb = Attitude.euler2dcm(temp_);
+
             updateRnb = Attitude.quat2dcm(updateQnb);
             
             % Velocity + Position Update
             omegaWn_en = vSO3.skewMatrix(wn_en);
             omegaWn_ie = vSO3.skewMatrix(wn_ie);
-            vnbDotPrev = oldState(:, 1);
-            pnbDotPrev = oldState(:, 2);
+%             vnbDotPrev = oldState(:, 1);
+%             pnbDotPrev = oldState(:, 2);
             
             switch(integralOpt)
                 case '2ndOrder' % Trapezoidal Integration
                     % Velocity
-                    fn = 1/2 * (Rnb + updateRnb) * fb;
+%                     fn = 1/2 * (Rnb + updateRnb) * fb;
+                    fn = updateRnb * fb;
                     vnbDot = fn - (omegaWn_en + 2 * omegaWn_ie) * vnb + gVec;
+                    if timeStamp == 1
+                        vnbDotPrev = vnbDot;
+                    else
+                        vnbDotPrev = oldState(:, 1);
+                    end
                     updateVnb = vnb + 1/2 * (vnbDot + vnbDotPrev) * dt;
                     vnbDotPrev = vnbDot;
                     
                     % Position
-                    pnbDot(1) = updateVnb(1) / (Rn + pnb(3)); % Eq. 3.79
-                    pnbDot(3) = -updateVnb(3); % Eq. 3.81
-                    
-                    updatePnb(3) = pnb(3) + 1/2 * (pnbDot(3) + pnbDotPrev(3)) * dt;
-                    updatePnb(1) = pnb(1) + 1/2 * (pnbDot(1) + pnbDotPrev(1)) * dt;
-                    
-                    [~, Re] = INS.radiusWGS84(updatePnb(1));
-                    pnbDot(2) = updateVnb(2) / ((Re + pnb(3)) * cos(pnb(1)));
-                    updatePnb(2) = pnb(2) + 1/2 * (pnbDot(2) + pnbDotPrev(2)) * dt;
-                    
-                    pnbDotPrev = pnbDot';
-                    
-                case '4thOrder' % 4th Order Runge Kutta ~ Working...
-                    %                     fn = 1/2 * (Rnb + updateR) * fb;
-                    
+                    switch(flag)
+                        case 'rad'
+                            pnbDot(1) = updateVnb(1) / (Rn + pnb(3)); % Eq. 3.79
+                            pnbDot(3) = -updateVnb(3); % Eq. 3.81
+                            
+                            if timeStamp == 1
+                                pnbDotPrev(3) = pnbDot(3);
+                                pnbDotPrev(1) = pnbDot(1);
+                            else
+                                pnbDotPrev = oldState(:, 2);
+                            end
+                            
+                            updatePnb(3) = pnb(3) + 1/2 * (pnbDot(3) +  (3)) * dt;
+                            updatePnb(1) = pnb(1) + 1/2 * (pnbDot(1) + pnbDotPrev(1)) * dt;
+                            
+                            [~, Re] = INS.radiusWGS84(updatePnb(1));
+                            pnbDot(2) = updateVnb(2) / ((Re + pnb(3)) * cos(pnb(1)));
+                            
+                            if timeStamp == 1
+                                pnbDotPrev(2) = pnbDot(2);
+                            end
+                                
+                            updatePnb(2) = pnb(2) + 1/2 * (pnbDot(2) + pnbDotPrev(2)) * dt;
+                            pnbDotPrev = pnbDot';
+                        
+                        case 'meter'
+                            pnbDot = updateVnb;
+                            
+                            if timeStamp == 1
+                                pnbDotPrev = pnbDot;
+                            
+                            else
+                                pnbDotPrev = oldState(:, 2);
+                            end
+                            
+                            updatePnb = pnb + 1/2 * (pnbDot + pnbDotPrev) * dt;
+                            pnbDotPrev = pnbDot;
+                    end
+                case '4thOrder' % 4th Order Runge Kutta 
+                    % ~ Working...
+
                 otherwise
                     error('Not Proper Integration Option')
             end
@@ -203,33 +247,53 @@ classdef INS
                     F34 = Z;
                     F35 = -Rnb;
                 case 'meter'
-                    R0 = INS.R0;
-                    F11 = Z;
-                    F12 = [1/(R0 + updatePnb(3))  0  0  ;  0  0  0  ;  0  0  -1 ];
-                    F13 = Z;
-                    F14 = Z;
-                    F15 = Z;
+                    switch(order)
+                        case 'PVQ'
+                            % P V Q
+                            F11 = Z;
+                            F12 = eye(3);
+                            F13 = Z;
+                            F14 = Z;
+                            F15 = Z;
                     
-                    F21 = Z;
-                    F221 = [ updateVnb(3)/(R0 + updatePnb(3))   0   0   ;   0   updateVnb(3)   0   ;   0   0   0];
-                    F222 = Z;
-                    F22 = F221 + F222;
-                    F23 = vSO3.skewMatrix(fn);
-                    F24 = Rnb;
-                    F25 = Z;
+                            F21 = Z;
+                            F22 = Z;
+                            F23 = vSO3.skewMatrix(fn);
+                            F24 = Rnb;
+                            F25 = Z;
                     
-                    F31 = Z;
-                    F32 = [ 0   1/(R0 + updatePnb(3))  0  ;  -1/(R0 + updatePnb(3))  0  0  ;  0  0  0 ];
-                    F33 = Z;
-                    F34 = Z;
-                    F35 = -Rnb;
+                            F31 = Z;
+                            F32 = Z;
+                            F33 = Z;
+                            F34 = Z;
+                            F35 = -Rnb;
+                        case 'QVP'
+                            % Q V P
+                            F11 = Z;
+                            F12 = Z;
+                            F13 = Z;
+                            F14 = Z;
+                            F15 = -Rnb;
+                    
+                            F21 = Z;
+                            F22 = Z;
+                            F23 = vSO3.skewMatrix(fn);
+                            F24 = Rnb;
+                            F25 = Z;
+                    
+                            F31 = Z;
+                            F32 = eye(3);
+                            F33 = Z;
+                            F34 = Z;
+                            F35 = Z;
+                    end
             end
             % Accelerator and Gyroscope Bias
             % Accel Bias
-            F41 = Z ; F42 = Z ; F43 = Z ; F44 = Z ; F45 = Z ;
+            F41 = Z ; F42 = Z ; F43 = Z ; F44 = randomWalk * eye(3) ; F45 = Z ;
             
             % Gyro Bias
-            F51 = Z ; F52 = Z ; F53 = Z ; F54 = Z ; F55 = Z ;
+            F51 = Z ; F52 = Z ; F53 = Z ; F54 = Z ; F55 = randomWalk * eye(3) ;
             
             F = [ F11 , F12 ,  F13 ,  F14 ,  F15;
                 F21  , F22 ,  F23 ,  F24 ,  F25;
@@ -251,8 +315,8 @@ classdef INS
             e = sqrt(f * (2 - f));           % Major eccentricity
             
             sL = sin(lat);
-            Rn = R * (1 - e^2) / (sqrt(1 - e^2 * sL^2))^3;	% Meridian Radius(R_N)
-            Re = R / (sqrt(1 - e^2 * sL^2));                     % Prinme Radius(R_E)
+            Rn = R * (1 - e^2) / (sqrt(1.0 - e^2 * sL^2))^3;	% Meridian Radius(R_N)
+            Re = R / (sqrt(1.0 - e^2 * sL^2));                     % Prinme Radius(R_E)
         end
         %-----------------------------------------------------------
         
@@ -266,12 +330,14 @@ classdef INS
             if(isequal(size(att),[3,3]))
             	obj.R = att;
             	obj.Quaternion = Attitude.dcm2quat(att);
-%                 obj.phi = vSO3.logmap(att);
+                obj.Euler = Attitude.dcm2euler(att);
+%                 obj.Euler = vSO3.logmap(att);
 
             elseif(isequal(size(att),[4,1]))
             	obj.Quaternion = att;
             	obj.R = Attitude.quat2dcm(att);
-%                 obj.phi = vSO3.logmap(obj.R);
+                obj.Euler = Attitude.quat2euler(att);
+%                 obj.Euler = vSO3.logmap(obj.R);
 
 %             elseif(isequal(size(att),[3,1]))
 %             	obj.phi = att;
@@ -288,6 +354,9 @@ classdef INS
         end
         %-----------------------------------------------------------
         
+        function y = gravityWGS84(lat, h)
+        
+        end
         %-----------------------------------------------------------
     end
 end
