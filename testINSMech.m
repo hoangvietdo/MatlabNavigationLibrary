@@ -1,4 +1,9 @@
-%% V iNCSL
+%% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
+%  Author : Viet
+%  e-Mail : hoangvietdo@sju.ac.kr
+%  Date : 
+
+%% Reference
 
 %% TODO
 

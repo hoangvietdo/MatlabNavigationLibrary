@@ -1,6 +1,7 @@
 %% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
 %  Author : Viet
 %  e-Mail : hoangvietdo@sju.ac.kr
+%  Date :
 %  Method Index : dcm2euler , dcm2quat , dcmNormalize , euler2dcm , euler2quat
 %             quat2dcm , quatConjugate , quatMultiply , quatLeftMultiply
 %             quatRightMultiply , quatIntegrateRK4 , omegaMat, rvec2quat , quatCorrectionIKF
@@ -335,7 +336,7 @@ classdef Attitude
         end
         %-----------------------------------------------------------
         
-        function y = quatMultiply(q, p)
+        function self = quatMultiply(q, p)
             
             % Ref 1 - Page: 43
             %
@@ -369,41 +370,41 @@ classdef Attitude
                 c ,  d  ,  a  ,  -b ;...
                 d , -c  ,  b  ,   a ];
             
-            y = temp*p;
+            self = temp*p;
             
-            if y(1,1)<0
-                y = -y;
+            if self(1,1)<0
+                self = -self;
             end
             
-            y = Attitude.quatNormalize(y); % keep the quaternion fresh ! ^_^
+            self = Attitude.quatNormalize(self); % keep the quaternion fresh ! ^_^
         end
         %-----------------------------------------------------------
         
-        function y = quatLeftMultiply(quaternion)
+        function self = quatLeftMultiply(quaternion)
             
             scalar = quaternion(1);
             q_vec = [quaternion(2); quaternion(3); quaternion(4)];
             
-            y = [scalar, -q_vec'; ...
+            self = [scalar, -q_vec'; ...
                 q_vec, scalar * eye(3) + skewMatrix(q_vec)];
             
-            y = Attitude.quatNormalize(y);
+            self = Attitude.quatNormalize(self);
         end
         %-----------------------------------------------------------
         
-        function y = quatRightMultiply(quaternion)
+        function self = quatRightMultiply(quaternion)
             
             scalar = quaternion(1);
             q_vec = [quaternion(2); quaternion(3); quaternion(4)];
             
-            y = [scalar, -q_vec'; ...
+            self = [scalar, -q_vec'; ...
                 q_vec, scalar * eye(3) - skewMatrix(q_vec)];
             
-            y = Attitude.quatNormalize(y);
+            self = Attitude.quatNormalize(self);
         end
         %-----------------------------------------------------------
         
-        function y = quatIntegrateRK4(ql, wl, wl1, dt)
+        function self = quatIntegrateRK4(ql, wl, wl1, dt)
             
             dq1 = [0; wl];
             dq2 = [0; (wl + wl1) / 2];
@@ -418,8 +419,8 @@ classdef Attitude
             k3 = 1/2 * Om2 * (ql + dt / 2 * k2);
             k4 = 1/2 * Om3 * (ql + dt * k3);
             
-            y = ql +  dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
-            y = Attitude.quatNormalize(y);
+            self = ql +  dt / 6 * (k1 + 2 * k2 + 2 * k3 + k4);
+            self = Attitude.quatNormalize(self);
             
         end
         %-----------------------------------------------------------
@@ -496,7 +497,19 @@ classdef Attitude
         end
         %-----------------------------------------------------------
         
-        
+        function rvec = quat2rvec(quat)
+            
+            s_t2 = sqrt(quat(2)^2+quat(3)^2+quat(4)^2);     % sin(theta/2)
+            c_t2 = quat(1);								% cos(theta/2)
+            
+            if (s_t2 == 0)
+			    rvec = zeros(3,1);
+			else
+			    theta = 2*atan2(s_t2, c_t2);
+			    rvec = theta * [quat(2);quat(3);quat(4)]/s_t2;
+            end
+            
+        end
         %-----------------------------------------------------------
     end
 end

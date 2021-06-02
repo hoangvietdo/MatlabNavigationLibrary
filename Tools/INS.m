@@ -1,6 +1,7 @@
  %% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
 %  Author : Viet
 %  e-Mail : hoangvietdo@sju.ac.kr
+%  Date :
 %  Method Index : localNav , buildState
 
 %% TODO
@@ -36,7 +37,7 @@ classdef INS
     end
     
     methods(Static)
-        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, integralOpt, flag, timeStamp,randomWalk,order)            
+        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, integralOpt, flag, timeStamp,randomWalk, order)            
             
             % Local Navigation frame - NED INS mechanization
             % Ref 1 - Page 32 + 47 + 342
