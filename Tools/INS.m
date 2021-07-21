@@ -37,7 +37,7 @@ classdef INS
     end
     
     methods(Static)
-        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, integralOpt, flag, timeStamp,randomWalk, order)            
+        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, timeStamp, randomWalk, order, integralOpt, flag)            
             
             % Local Navigation frame - NED INS mechanization
             % Ref 1 - Page 32 + 47 + 342
@@ -62,17 +62,17 @@ classdef INS
             %-----------------------------------------------------------
             
             % Check the flag
-            if(isempty(flag))
+            if nargin < 9
                 flag = 'meter';
             end
             
             % Check order
-            if(isempty(order))
+            if nargin < 7
                 order = 'PVQ';
             end
             
             % Check the integralOpt
-            if(isempty(integralOpt))
+            if nargin < 8
                 integralOpt = '2ndOrder';
             end
             
@@ -170,7 +170,8 @@ classdef INS
                             pnbDotPrev = pnbDot';
                         
                         case 'meter'
-                            pnbDot = updateVnb;
+                            pnbDot(1:2) = updateVnb(1:2);
+                            pnbDot(3) = -updateVnb(3);
                             
                             if timeStamp == 1
                                 pnbDotPrev = pnbDot;
@@ -208,13 +209,13 @@ classdef INS
                     w_e = INS.w_e;
                     
                     % Position error
-                    F11 = [                      0                             ,   0   ,   -v_n/((M+h)^2);...
-                                v_e*sin(lat)/((N+h)*cos(lat)^2)   ,   0   ,   -v_e/((N+h)^2*cos(lat));...
-                                                     0                             ,   0   ,                   0                    ];
+                    F11 = [                      0                                    ,   0   ,   -v_n / ((M + h)^2);...
+                                v_e * sin(lat) / ((N + h) * cos(lat)^2)      ,   0   ,   -v_e / ((N + h)^2 * cos(lat));...
+                                                     0                                     ,   0   ,                   0                    ];
                     
-                    F12 = [ 1/(M+h)     ,                 0                ,    0;...
-                                      0          ,    1/((N+h)*cos(lat))   ,    0;...
-                                      0          ,                  0                ,   -1];
+                    F12 = [ 1 / (M + h)     ,                 0                     ,    0;...
+                                      0             ,    1 / ((N + h) * cos(lat))    ,    0;...
+                                      0             ,                  0                     ,   -1];
                     
                     F13 = Z;
                     F14 = Z;
@@ -223,36 +224,41 @@ classdef INS
                     % Error Velocity
                     %                     foo = 2*gamma/(R+h);
                     foo = 0;
-                    F21 = [     -2*v_e*w_e*cos(lat) - v_e^2/((N+h)*cos(lat)^2)                             ,   0   ,       -v_n*v_d/((M+h)^2) + v_e^2*tan(lat)/((N+h)^2);...
-                                    2*w_e*(v_n*cos(lat) - v_d*sin(lat)) + v_e*v_n/((N+h)*cos(lat)^2)   ,   0   ,       -v_e*v_d/((N+h)^2) - v_n*tan(lat)/((N+h)^2);...
-                                                 2*v_e*w_e*sin(lat)                                                                 ,   0   ,        v_e^2/((N+h)^2) + v_n^2/((M+h)^2) - foo ];
+                    F21 = [     -2 * v_e * w_e * cos(lat) - v_e^2 / ((N + h) * cos(lat)^2)                                 ,   0   ,       -v_n * v_d / ((M + h)^2) + v_e^2 * tan(lat) / ((N + h)^2);...
+                                    2 * w_e * (v_n * cos(lat) - v_d * sin(lat)) + v_e * v_n / ((N + h) * cos(lat)^2)     ,   0   ,       -v_e * v_d / ((N + h)^2) - v_n * tan(lat) / ((N + h)^2);...
+                                           2 * v_e * w_e * sin(lat)                                                                            ,   0   ,        v_e^2 / ((N + h)^2) + v_n^2 / ((M + h)^2) - foo ];
                     
-                    F22 = [                 v_d/(M+h)                               ,  -2*w_e*sin(lat) - 2*v_e*tan(lat)/(N+h)    ,   v_n/(M+h);...
-                                    2*w_e*sin(lat) + v_e*tan(lat)/(N+h)   ,          (v_d + v_n*tan(lat))/(N+h)               ,   2*w_e*cos(lat) + v_e/(N+h);...
-                                            -2*v_n/(M+h)                             ,           -2*w_e*cos(lat)+2*v_e/(N+h)        ,             0];
+                    F22 = [                 v_d / (M+h)                                       ,  -2 * w_e * sin(lat) - 2 * v_e * tan(lat) / (N + h)      ,   v_n / (M + h);...
+                                    2 * w_e * sin(lat) + v_e * tan(lat) / (N + h)      ,          (v_d + v_n * tan(lat)) / (N + h)                     ,   2 * w_e * cos(lat) + v_e / (N + h);...
+                                            -2 * v_n / (M + h)                                 ,           -2 * w_e * cos(lat) + 2 * v_e /( N + h)          ,             0];
                     F23 = vSO3.skewMatrix(fn);
-                    F24 = Rnb;
+                    F24 = updateRnb;
                     F25 = Z;
                     
                     % Error Attitude
                     
-                    F31 = [                     -w_e*sin(lat)                        ,    0   ,     -v_e/((N+h)^2);...
-                                                              0                                 ,    0   ,      v_n/((M+h)^2);...
-                                -w_e*cos(lat) - v_e/((N+h)*cos(lat)^2)   ,    0   ,      v_e*tan(lat)/((N+h)^2)];
+                    F31 = [                     -w_e * sin(lat)                              ,    0   ,     -v_e / ((N + h)^2);...
+                                                              0                                      ,    0   ,      v_n / ((M + h)^2);...
+                                -w_e * cos(lat) - v_e / ((N + h) * cos(lat)^2)      ,    0   ,      v_e * tan(lat) / ((N + h)^2)];
                     
-                    F32 = [             0          ,      1/(N+h)         ,     0;...
-                                    -1/(M+h)      ,            0              ,     0;...
-                                            0          ,  -tan(lat)/(N+h)   ,     0];
+                    F32 = [             0               ,      1 / (N + h)         ,     0;...
+                                    -1 / (M + h)      ,            0                  ,     0;...
+                                            0              ,  -tan(lat) / (N + h)   ,     0];
                     
-                    F33 = vSO3.skewMatrix([-w_e*cos(lat)-v_e/(N+h)  , v_n/(M+h) , w_e*sin(lat)+v_e*tan(lat)/(N+h)]');
+                    F33 = vSO3.skewMatrix([-w_e * cos(lat) - v_e / (N+h), v_n / (M+h), w_e * sin(lat) + v_e * tan(lat) / (N + h)]');
                     F34 = Z;
-                    F35 = -Rnb;
+                    F35 = -updateRnb;
                 case 'meter'
                     switch(order)
                         case 'PVQ'
                             % P V Q
                             F11 = Z;
-                            F12 = eye(3);
+                            %%
+%                             F12 = eye(3);
+                            F12 = diag([1; 1; -1]);
+%                             F12 = [1/(INS.R0 + updatePnb(3)), 0, 0; 0, 1/(INS.R0 + updatePnb(3)), 0; 0, 0, -1];
+%                             F12 = [1/(updatePnb(3)), 0, 0; 0, 1/(updatePnb(3)), 0; 0, 0, -1];
+                            %%
                             F13 = Z;
                             F14 = Z;
                             F15 = Z;
@@ -260,26 +266,26 @@ classdef INS
                             F21 = Z;
                             F22 = Z;
                             F23 = vSO3.skewMatrix(fn);
-                            F24 = Rnb;
+                            F24 = updateRnb;
                             F25 = Z;
                     
                             F31 = Z;
                             F32 = Z;
                             F33 = Z;
                             F34 = Z;
-                            F35 = -Rnb;
+                            F35 = -updateRnb;
                         case 'QVP'
                             % Q V P
                             F11 = Z;
                             F12 = Z;
                             F13 = Z;
                             F14 = Z;
-                            F15 = -Rnb;
+                            F15 = -updateRnb;
                     
                             F21 = Z;
                             F22 = Z;
                             F23 = vSO3.skewMatrix(fn);
-                            F24 = Rnb;
+                            F24 = updateRnb;
                             F25 = Z;
                     
                             F31 = Z;
@@ -297,10 +303,10 @@ classdef INS
             F51 = Z ; F52 = Z ; F53 = Z ; F54 = Z ; F55 = randomWalk * eye(3) ;
             
             F = [ F11 , F12 ,  F13 ,  F14 ,  F15;
-                F21  , F22 ,  F23 ,  F24 ,  F25;
-                F31  , F32 ,  F33 ,  F34 ,  F35;
-                F41  , F42 ,  F43 ,  F44 ,  F45;
-                F51  , F52 ,  F53 ,  F54 ,  F55];
+                   F21  , F22 ,  F23 ,  F24 ,  F25;
+                   F31  , F32 ,  F33 ,  F34 ,  F35;
+                   F41  , F42 ,  F43 ,  F44 ,  F45;
+                   F51  , F52 ,  F53 ,  F54 ,  F55];
             
             Fk = eye(15) + F*dt;
         end
@@ -357,6 +363,58 @@ classdef INS
         
         function y = gravityWGS84(lat, h)
         
+        end
+        %-----------------------------------------------------------
+        
+        function [updateState, Fk] = DeadReckoning(state, measurement, dt)
+            
+            % Attitude measurement from gyroscope wb
+            % Velocity measurement from another sensor (camera/radar/odometert) vb
+            wb = measurement(:, 1) - state.biasGyro;
+            vb = measurement(:, 2);
+            
+            biasGyro = state.biasGyro;
+%             Rnb = state.R;
+            qnb = state.Quaternion;
+%             vnb = state.Velocity;
+            pnb = state.Position;
+            
+                        
+            %% INS Mechanization for meter case
+            % Attitude Update
+            sigma = wb * dt;
+            rk = Attitude.rvec2quat(sigma);
+            updateQnb = Attitude.quatMultiply(qnb, rk);
+            updateRnb = Attitude.quat2dcm(updateQnb);
+            
+            % Position
+            vn = updateRnb * vb;
+            pnbDot = vn;
+            
+            updatePnb = pnb + pnbDot * dt;
+            
+            updateState = INS.buildState(updatePnb, zeros(3, 1), updateQnb, zeros(3, 1), biasGyro, zeros(3, 1));
+            
+            %% Calculate F matrix
+            Z = zeros(3, 3);
+            
+            F11 = Z;
+            F12 = vSO3.skewMatrix(updateRnb * vb);
+            F13 = Z;
+            
+            F21 = Z;
+            F22 = Z;
+            F23 = -updateRnb;
+            
+            F31 = Z;
+            F32 = Z;
+            F33 = Z;
+            
+            F = [F11, F12, F13; ...
+                 F21, F22, F23; ...
+                 F31, F32, F33];
+             
+            Fk = eye(9) + F * dt;
         end
         %-----------------------------------------------------------
     end
