@@ -100,19 +100,19 @@ classdef vPlotting
             %% Attitude
             figure('NumberTitle', 'off', 'Name', 'Attitude Estimation');
             subplot(311);
-            plot(gT.Euler(1, :)); hold on;
+            plot(gT.Euler(1, :) * vPlotting.r2d); hold on;
             plot(Est.Euler(1, :) * vPlotting.r2d); hold off; ylabel('Roll [Deg]');
             xlim([0 max(length(gT.Euler), length(Est.Euler))]);
             
             title('Attitude Estimation');legend('True','Estimate', 'Location', 'Best', 'Interpreter', 'LaTex');
             
             subplot(312);
-            plot(gT.Euler(2, :)); hold on;
+            plot(gT.Euler(2, :) * vPlotting.r2d); hold on;
             plot(Est.Euler(2, :) * vPlotting.r2d); hold off; ylabel('Pitch [Deg]');
             xlim([0 max(length(gT.Euler), length(Est.Euler))]);
             
             subplot(313);
-            plot(gT.Euler(3, :)); hold on;
+            plot(gT.Euler(3, :) * vPlotting.r2d); hold on;
             plot(Est.Euler(3, :) * vPlotting.r2d); hold off; ylabel('Yaw [Deg]');
             xlim([0 max(length(gT.Euler), length(Est.Euler))]);
             xlabel('Time [sec]');
@@ -126,14 +126,14 @@ classdef vPlotting
             
             %% Accel Bias
             figure('NumberTitle', 'off', 'Name', 'Accelerometer Bias Estimation');
-            subplot(311); plot(Est.biasAccel(1, :)); ylabel('ba_x [m/s^2]');
+            subplot(311); plot(Est.biasAccel(1, :)); ylabel('X [m/$s^2$]');
             xlim([0 max(length(Est.biasAccel))]);
             
             title('Accel Bias Estimation');legend('Estimate', 'Location', 'Best', 'Interpreter', 'LaTex');
-            subplot(312); plot(Est.biasAccel(2, :)); ylabel('ba_y [m/s^2]');
+            subplot(312); plot(Est.biasAccel(2, :)); ylabel('Y [m/$s^2$]');
             xlim([0 max(length(Est.biasAccel))]);
             
-            subplot(313); plot(Est.biasAccel(3, :)); ylabel('ba_z [m/s^2]');
+            subplot(313); plot(Est.biasAccel(3, :)); ylabel('Z [m/$s^2$]');
             xlim([0 max(length(Est.biasAccel))]);
             xlabel('Time [sec]');
             
@@ -146,14 +146,14 @@ classdef vPlotting
             
             %% Gyro Bias
             figure('NumberTitle', 'off', 'Name', 'Gyroscope Bias Estimation');
-            subplot(311); plot(Est.biasGyro(1, :) * vPlotting.r2d); ylabel('bg_x [deg/s]');
+            subplot(311); plot(Est.biasGyro(1, :) * vPlotting.r2d); ylabel('X [deg/s]');
             xlim([0 max(length(Est.biasGyro))]);
             title('Gyro Bias Estimation');legend('Estimate', 'Location', 'Best', 'Interpreter', 'LaTex');
             
-            subplot(312); plot(Est.biasGyro(2, :) * vPlotting.r2d); ylabel('bg_y [deg/s]');
+            subplot(312); plot(Est.biasGyro(2, :) * vPlotting.r2d); ylabel('Y [deg/s]');
             xlim([0 max(length(Est.biasGyro))]);
             
-            subplot(313); plot(Est.biasGyro(3, :) * vPlotting.r2d); ylabel('bg_z [deg/s]');
+            subplot(313); plot(Est.biasGyro(3, :) * vPlotting.r2d); ylabel('Z [deg/s]');
             xlim([0 max(length(Est.biasGyro))]);
             xlabel('Time [sec]');
             
@@ -249,14 +249,19 @@ classdef vPlotting
             subplot(311);plot(error(1, :)); hold on;
             plot(3 * var(1, :), 'r');
             plot(-3 * var(1, :), 'r'); hold off; ylabel('X [m]');
-            title('Estimation Error vs. 3\sigma bounds of Position');
+            xlim([0 max(length(error))]);
+            title('Estimation Error vs. $\pm 3 \sigma$ bounds of Position');
             
             subplot(312);plot(error(2, :)); hold on;
             plot(3 * var(2, :), 'r')
             plot(-3 * var(2, :), 'r'); hold off; ylabel('Y [m]');
+            xlim([0 max(length(error))]);
+
             subplot(313);plot(error(3, :)); hold on;
             plot(3 * var(3, :), 'r')
             plot(-3 * var(3, :), 'r'); hold off; ylabel('Z [m]');
+            xlim([0 max(length(error))]);
+
             xlabel('Time [sec]');
             
             if flag == 1
@@ -271,13 +276,18 @@ classdef vPlotting
             subplot(311);plot(error(4, :)); hold on;
             plot(3 * var(4, :), 'r')
             plot(-3 * var(4, :), 'r'); hold off; ylabel('X [m/s]');
-            title('Estimation Error vs. 3\sigma bounds of Velocity');
+            xlim([0 max(length(error))]);
+            title('Estimation Error vs. $\pm 3 \sigma$ bounds of Velocity');
+            
             subplot(312);plot(error(5, :)); hold on;
             plot(3 * var(5, :), 'r')
             plot(-3 * var(5, :), 'r'); hold off; ylabel('Y [m/s]');
+            xlim([0 max(length(error))]);
+
             subplot(313);plot(error(6, :)); hold on;
             plot(3 * var(6, :), 'r')
             plot(-3 * var(6, :), 'r'); hold off; ylabel('Z [m/s]');
+            xlim([0 max(length(error))]);
             xlabel('Time [sec]');
             
             if flag == 1
@@ -286,18 +296,24 @@ classdef vPlotting
                 set(gcf, 'PaperPosition', [0 0 6 4.5]);
                 exportgraphics(gcf, 'Figures/eb_velocity.png', 'Resolution', 600);
             end
+            
             %% Attitude
             figure('NumberTitle', 'off', 'Name', 'Error Bound of Attitude');
             subplot(311);plot(error(7, :) * vPlotting.r2d); hold on;
             plot(3 * var(7, :) * vPlotting.r2d, 'r')
-            plot(-3 * var(7, :) * vPlotting.vPlotting.r2d, 'r'); hold off; ylabel('X [Deg]');
-            title('Estimation Error vs. 3\sigma bounds of Attitude');
+            plot(-3 * var(7, :) * vPlotting.r2d, 'r'); hold off; ylabel('X [Deg]');
+            xlim([0 max(length(error))]);
+            title('Estimation Error vs. $\pm 3 \sigma$ bounds of Attitude');
+            
             subplot(312);plot(error(8, :) * vPlotting.r2d); hold on;
             plot(3 * var(8, :) * vPlotting.r2d, 'r')
             plot(-3 * var(8, :) * vPlotting.r2d, 'r'); hold off; ylabel('Y [Deg]');
+            xlim([0 max(length(error))]);
+
             subplot(313);plot(error(9, :) * vPlotting.r2d); hold on;
             plot(3 * var(9, :) * vPlotting.r2d, 'r')
             plot(-3 * var(9, :) * vPlotting.r2d, 'r'); hold off; ylabel('Z [Deg]');
+            xlim([0 max(length(error))]);
             xlabel('Time [sec]');
             
             if flag == 1
@@ -306,18 +322,24 @@ classdef vPlotting
                 set(gcf, 'PaperPosition', [0 0 6 4.5]);
                 exportgraphics(gcf, 'Figures/eb_attitude.png', 'Resolution', 600);
             end
+            
             %% Bias Estimation
             figure('NumberTitle', 'off', 'Name', 'Error Bound of Accel Bias');
             subplot(311);plot(error(10, :)); hold on;
             plot(3 * var(10, :), 'r')
-            plot(-3 * var(10, :), 'r'); hold off; ylabel('X [mg]');
-            title('Estimation Error vs. 3\sigma bounds of Accelerometer Bias');
+            plot(-3 * var(10, :), 'r'); hold off; ylabel('X [m/$s^2$]');
+            xlim([0 max(length(error))]);
+            title('Estimation Error vs. $\pm 3 \sigma$ bounds of Accelerometer Bias');
+            
             subplot(312);plot(error(11, :)); hold on;
             plot(3 * var(11, :), 'r')
-            plot(-3 * var(11, :), 'r'); hold off; ylabel('Y [mg]');
+            plot(-3 * var(11, :), 'r'); hold off; ylabel('Y [m/$s^2$]');
+            xlim([0 max(length(error))]);
+            
             subplot(313);plot(error(12, :)); hold on;
             plot(3 * var(12, :), 'r')
-            plot(-3 * var(12, :), 'r'); hold off; ylabel('Z [mg]');
+            plot(-3 * var(12, :), 'r'); hold off; ylabel('Z [m/$s^2$]');
+            xlim([0 max(length(error))]);
             xlabel('Time [sec]');
             
             if flag == 1
@@ -326,18 +348,24 @@ classdef vPlotting
                 set(gcf, 'PaperPosition', [0 0 6 4.5]);
                 exportgraphics(gcf, 'Figures/eb_accelBias.png', 'Resolution', 600);
             end
+            
             %% Gyro Estimation
             figure('NumberTitle', 'off', 'Name', 'Error Bound of Gyro Bias');
             subplot(311);plot(error(13, :) * vPlotting.r2d); hold on;
             plot(3 * var(13, :) * vPlotting.r2d, 'r')
             plot(-3 * var(13, :) * vPlotting.r2d, 'r'); hold off; ylabel('X [Deg/s]');
-            title('Estimation Error vs. 3\sigma bounds of Gyroscope Bias');
+            xlim([0 max(length(error))]);
+            title('Estimation Error vs. $\pm 3 \sigma$ bounds of Gyroscope Bias');
+            
             subplot(312);plot(error(14, :) * vPlotting.r2d); hold on;
             plot(3 * var(14, :) * vPlotting.r2d, 'r')
             plot(-3 * var(14, :) * vPlotting.r2d, 'r'); hold off; ylabel('Y [Deg/s]');
+            xlim([0 max(length(error))]);
+
             subplot(313);plot(error(15, :) * vPlotting.r2d); hold on;
             plot(3 * var(15, :) * vPlotting.r2d, 'r')
             plot(-3 * var(15, :) * vPlotting.r2d, 'r'); hold off; ylabel('Z [Deg/s]');
+            xlim([0 max(length(error))]);
             xlabel('Time [sec]');
             
             if flag == 1
@@ -349,25 +377,25 @@ classdef vPlotting
         end
         %-----------------------------------------------------------
         
-        function drawTrajectory(gT, Est, flag)
+        function drawTrajectory(gT, Est, dimension, flag)
             
             %% Check Flag
-            if nargin < 3
+            if nargin < 4
                 flag = 0;
             end
             
             %% 2D
             switch(dimension)
-                case 2
+                case '2D'
                     figure('NumberTitle', 'off', 'Name', '2D Trajectory Estimation');
-                    plot(gT.Position(1, :), gT.Position(2, :), 'b'); hold on;
-                    plot(Est.Position(1, :), Est.Position(2, :), 'r');
-                    plot(gT.Position(1, 1), gT.Position(2, 1), 'k*', 'MarkerFaceColor', 'k');
-                    plot(gT.Position(1, end), gT.Position(2, end), 'ks', 'MarkerFaceColor', 'k'); hold off;
+                    plot(gT.Position(2, :), gT.Position(1, :), 'b'); hold on;
+                    plot(Est.Position(2, :), Est.Position(1, :), 'r');
+                    plot(gT.Position(2, 1), gT.Position(1, 1), 'k*', 'MarkerFaceColor', 'k');
+                    plot(gT.Position(2, end), gT.Position(1, end), 'ks', 'MarkerFaceColor', 'k'); hold off;
                     title('2D Trajectory Estimation');
                     xlabel('X [m]');
                     ylabel('Y [m]');
-                    legend('Ground Truth', 'Estimation', 'Start', 'End');
+                    legend('Ground Truth', 'Estimation', 'Start', 'End', 'Location', 'Best', 'Interpreter', 'LaTex');
                     axis equal;
                     
                     if flag == 1
@@ -377,17 +405,17 @@ classdef vPlotting
                         exportgraphics(gcf, 'Figures/2Dtrajectory.png', 'Resolution', 600);
                     end
                     
-                case 3
+                case '3D'
                     figure('NumberTitle', 'off', 'Name', '3D Trajectory Estimation');
-                    plot3(gT.Position(1, :), gT.Position(2, :), gT.Position(3, :), 'b'); hold on;
-                    plot3(Est.Position(1, :), Est.Position(2, :), Est.Position(3, :), 'r');
-                    plot3(gT.Position(1, 1), gT.Position(2, 1), gT.Position(3, 1), 'k*', 'MarkerFaceColor', 'k');
-                    plot3(gT.Position(1, end), gT.Position(2, end), gT.Position(3, end), 'ks', 'MarkerFaceColor', 'k'); hold off;
+                    plot3(gT.Position(2, :), gT.Position(1, :), -gT.Position(3, :), 'b'); hold on;
+                    plot3(Est.Position(2, :), Est.Position(1, :), -Est.Position(3, :), 'r');
+                    plot3(gT.Position(2, 1), gT.Position(1, 1), -gT.Position(3, 1), 'k*', 'MarkerFaceColor', 'k');
+                    plot3(gT.Position(2, end), gT.Position(1, end), -gT.Position(3, end), 'ks', 'MarkerFaceColor', 'k'); hold off;
                     title('3D Trajectory Estimation');
                     xlabel('X [m]');
                     ylabel('Y [m]');
                     zlabel('Z [m]');
-                    legend('Ground Truth', 'Estimation', 'Start', 'End');
+                    legend('Ground Truth', 'Estimation', 'Start', 'End', 'Location', 'Best', 'Interpreter', 'LaTex');
                     axis equal;
                     
                     if flag == 1
