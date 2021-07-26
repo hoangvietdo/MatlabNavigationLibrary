@@ -21,7 +21,7 @@ classdef IndirectKalmanFilter
         function PPrior = prediction(C, Q, F, dt, PPosterior)
             
             Q(4:6, 4:6) = C * Q(4:6, 4:6) * C';
-            Q(4:6, 4:6) = C * Q(4:6, 4:6) * C';
+            Q(7:9, 7:9) = C * Q(7:9, 7:9) * C';
             
             PPrior = F * PPosterior * F' + Q * dt;
             PPrior = (PPrior + PPrior') / 2;
