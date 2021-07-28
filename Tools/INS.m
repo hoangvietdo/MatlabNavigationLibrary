@@ -1,4 +1,4 @@
- %% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
+%% License: intelligent Navigation and Control System Laboratory (iNCLS) - Sejong University
 %  Author : Viet
 %  e-Mail : hoangvietdo@sju.ac.kr
 %  Date :
@@ -33,14 +33,14 @@ classdef INS
         biasAccel;		% bias of accelerometer
         biasGyro;		% bias of gyro
         gVec;		% gravity at {G}
-        % 		phi;	% ... 
+        % 		phi;	% ...
     end
     
     methods(Static)
-        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, timeStamp, randomWalk, order, integralOpt, flag)            
+        function [updateState, prevState, Fk] = localNav(state, oldState, measurement, dt, randomWalk, order, integralOpt, flag)
             
             % Local Navigation frame - NED INS mechanization
-            % Ref 1 - Page 32 + 47 + 342
+            % Ref 1 - Page 32 + 47 + 342 + 343
             %-----------------------------------------------------------
             
             % Notation
@@ -62,17 +62,17 @@ classdef INS
             %-----------------------------------------------------------
             
             % Check the flag
-            if nargin < 9
+            if nargin < 8
                 flag = 'meter';
             end
             
             % Check order
-            if nargin < 7
+            if nargin < 6
                 order = 'PVQ';
             end
             
             % Check the integralOpt
-            if nargin < 8
+            if nargin < 7
                 integralOpt = '2ndOrder';
             end
             
@@ -99,7 +99,7 @@ classdef INS
                     [Rn, Re] = radiusWGS84(pnb(1));
                     wn_ie = [w_e*cos(pnb(1)), 0, -w_e*sin(pnb(1))]'; % Eq. 3.72
                     wn_en = [vnb(2)/(Re + pnb(3)), -vnb(1)/(Rn + pnb(3)), -vnb(2)*tan(pnb(1))/(Re + pnb(3))]'; % Eq. 3.87
-                
+                    
                 case 'meter'
                     wn_ie = zeros(3, 1);
                     wn_en = zeros(3, 1);
@@ -114,32 +114,21 @@ classdef INS
             rk = Attitude.rvec2quat(sigma);
             updateQnb = Attitude.quatMultiply(qnb, rk);
             
-%             temp = Attitude.quat2euler(updateQnb);
-%             temp_ = temp;
-%             temp_(1) = -temp(1);
-%             temp_(2) = -temp(2);
-%             temp_(3) = -temp(3);
-%             updateRnb = Attitude.euler2dcm(temp_);
-
             updateRnb = Attitude.quat2dcm(updateQnb);
             
             % Velocity + Position Update
             omegaWn_en = vSO3.skewMatrix(wn_en);
             omegaWn_ie = vSO3.skewMatrix(wn_ie);
-%             vnbDotPrev = oldState(:, 1);
-%             pnbDotPrev = oldState(:, 2);
+            vnbDotPrev = oldState(:, 1);
+            pnbDotPrev = oldState(:, 2);
             
             switch(integralOpt)
                 case '2ndOrder' % Trapezoidal Integration
                     % Velocity
-%                     fn = 1/2 * (Rnb + updateRnb) * fb;
+                    %                     fn = 1/2 * (Rnb + updateRnb) * fb;
                     fn = updateRnb * fb;
                     vnbDot = fn - (omegaWn_en + 2 * omegaWn_ie) * vnb + gVec;
-                    if timeStamp == 1
-                        vnbDotPrev = vnbDot;
-                    else
-                        vnbDotPrev = oldState(:, 1);
-                    end
+                    
                     updateVnb = vnb + 1/2 * (vnbDot + vnbDotPrev) * dt;
                     vnbDotPrev = vnbDot;
                     
@@ -149,43 +138,25 @@ classdef INS
                             pnbDot(1) = updateVnb(1) / (Rn + pnb(3)); % Eq. 3.79
                             pnbDot(3) = -updateVnb(3); % Eq. 3.81
                             
-                            if timeStamp == 1
-                                pnbDotPrev(3) = pnbDot(3);
-                                pnbDotPrev(1) = pnbDot(1);
-                            else
-                                pnbDotPrev = oldState(:, 2);
-                            end
-                            
-                            updatePnb(3) = pnb(3) + 1/2 * (pnbDot(3) +  (3)) * dt;
+                            updatePnb(3) = pnb(3) + 1/2 * (pnbDot(3) + pnbDotPrev(3)) * dt;
                             updatePnb(1) = pnb(1) + 1/2 * (pnbDot(1) + pnbDotPrev(1)) * dt;
                             
                             [~, Re] = INS.radiusWGS84(updatePnb(1));
                             pnbDot(2) = updateVnb(2) / ((Re + pnb(3)) * cos(pnb(1)));
                             
-                            if timeStamp == 1
-                                pnbDotPrev(2) = pnbDot(2);
-                            end
-                                
                             updatePnb(2) = pnb(2) + 1/2 * (pnbDot(2) + pnbDotPrev(2)) * dt;
                             pnbDotPrev = pnbDot';
-                        
+                            
                         case 'meter'
-                            pnbDot(1:2) = updateVnb(1:2);
-                            pnbDot(3) = -updateVnb(3);
-                            
-                            if timeStamp == 1
-                                pnbDotPrev = pnbDot;
-                            
-                            else
-                                pnbDotPrev = oldState(:, 2);
-                            end
+                            pnbDot = updateVnb;
+                            pnbDot(3) = -pnbDot(3);
                             
                             updatePnb = pnb + 1/2 * (pnbDot + pnbDotPrev) * dt;
                             pnbDotPrev = pnbDot;
                     end
-                case '4thOrder' % 4th Order Runge Kutta 
+                case '4thOrder' % 4th Order Runge Kutta
                     % ~ Working...
-
+                    
                 otherwise
                     error('Not Proper Integration Option')
             end
@@ -211,7 +182,7 @@ classdef INS
                     % Position error
                     F11 = [                      0                                    ,   0   ,   -v_n / ((M + h)^2);...
                                 v_e * sin(lat) / ((N + h) * cos(lat)^2)      ,   0   ,   -v_e / ((N + h)^2 * cos(lat));...
-                                                     0                                     ,   0   ,                   0                    ];
+                                                    0                                     ,   0   ,                   0                    ];
                     
                     F12 = [ 1 / (M + h)     ,                 0                     ,    0;...
                                       0             ,    1 / ((N + h) * cos(lat))    ,    0;...
@@ -254,21 +225,21 @@ classdef INS
                             % P V Q
                             F11 = Z;
                             %%
-%                             F12 = eye(3);
+                            %                             F12 = eye(3);
                             F12 = diag([1; 1; -1]);
-%                             F12 = [1/(INS.R0 + updatePnb(3)), 0, 0; 0, 1/(INS.R0 + updatePnb(3)), 0; 0, 0, -1];
-%                             F12 = [1/(updatePnb(3)), 0, 0; 0, 1/(updatePnb(3)), 0; 0, 0, -1];
+                            %                             F12 = [1/(INS.R0 + updatePnb(3)), 0, 0; 0, 1/(INS.R0 + updatePnb(3)), 0; 0, 0, -1];
+                            %                             F12 = [1/(updatePnb(3)), 0, 0; 0, 1/(updatePnb(3)), 0; 0, 0, -1];
                             %%
                             F13 = Z;
                             F14 = Z;
                             F15 = Z;
-                    
+                            
                             F21 = Z;
                             F22 = Z;
                             F23 = vSO3.skewMatrix(fn);
                             F24 = updateRnb;
                             F25 = Z;
-                    
+                            
                             F31 = Z;
                             F32 = Z;
                             F33 = Z;
@@ -281,15 +252,15 @@ classdef INS
                             F13 = Z;
                             F14 = Z;
                             F15 = -updateRnb;
-                    
+                            
                             F21 = Z;
                             F22 = Z;
                             F23 = vSO3.skewMatrix(fn);
                             F24 = updateRnb;
                             F25 = Z;
-                    
+                            
                             F31 = Z;
-                            F32 = eye(3);
+                            F32 = diag([1; 1; -1]);
                             F33 = Z;
                             F34 = Z;
                             F35 = Z;
@@ -303,10 +274,10 @@ classdef INS
             F51 = Z ; F52 = Z ; F53 = Z ; F54 = Z ; F55 = randomWalk * eye(3) ;
             
             F = [ F11 , F12 ,  F13 ,  F14 ,  F15;
-                   F21  , F22 ,  F23 ,  F24 ,  F25;
-                   F31  , F32 ,  F33 ,  F34 ,  F35;
-                   F41  , F42 ,  F43 ,  F44 ,  F45;
-                   F51  , F52 ,  F53 ,  F54 ,  F55];
+                F21  , F22 ,  F23 ,  F24 ,  F25;
+                F31  , F32 ,  F33 ,  F34 ,  F35;
+                F41  , F42 ,  F43 ,  F44 ,  F45;
+                F51  , F52 ,  F53 ,  F54 ,  F55];
             
             Fk = eye(15) + F*dt;
         end
@@ -335,23 +306,23 @@ classdef INS
             validateattributes(g_,{'double'},{'size', [3,1]})
             
             if(isequal(size(att),[3,3]))
-            	obj.R = att;
-            	obj.Quaternion = Attitude.dcm2quat(att);
+                obj.R = att;
+                obj.Quaternion = Attitude.dcm2quat(att);
                 obj.Euler = Attitude.dcm2euler(att);
-%                 obj.Euler = vSO3.logmap(att);
-
+                %                 obj.Euler = vSO3.logmap(att);
+                
             elseif(isequal(size(att),[4,1]))
-            	obj.Quaternion = att;
-            	obj.R = Attitude.quat2dcm(att);
+                obj.Quaternion = att;
+                obj.R = Attitude.quat2dcm(att);
                 obj.Euler = Attitude.quat2euler(att);
-%                 obj.Euler = vSO3.logmap(obj.R);
-
-%             elseif(isequal(size(att),[3,1]))
-%             	obj.phi = att;
-%             	obj.R = vSO3.expmap(att);
-%             	obj.q = Attitude.dcm2quat(obj.R);
+                %                 obj.Euler = vSO3.logmap(obj.R);
+                
+                %             elseif(isequal(size(att),[3,1]))
+                %             	obj.phi = att;
+                %             	obj.R = vSO3.expmap(att);
+                %             	obj.q = Attitude.dcm2quat(obj.R);
             else
-            	error('3rd input should have the size of [3,3] or [4,1] or [3,1]')
+                error('3rd input should have the size of [3,3] or [4,1] or [3,1]')
             end
             obj.Position = p_;
             obj.Velocity = v_;
@@ -362,7 +333,7 @@ classdef INS
         %-----------------------------------------------------------
         
         function y = gravityWGS84(lat, h)
-        
+            
         end
         %-----------------------------------------------------------
         
@@ -374,12 +345,12 @@ classdef INS
             vb = measurement(:, 2);
             
             biasGyro = state.biasGyro;
-%             Rnb = state.R;
+            %             Rnb = state.R;
             qnb = state.Quaternion;
-%             vnb = state.Velocity;
+            %             vnb = state.Velocity;
             pnb = state.Position;
             
-                        
+            
             %% INS Mechanization for meter case
             % Attitude Update
             sigma = wb * dt;
@@ -411,9 +382,9 @@ classdef INS
             F33 = Z;
             
             F = [F11, F12, F13; ...
-                 F21, F22, F23; ...
-                 F31, F32, F33];
-             
+                F21, F22, F23; ...
+                F31, F32, F33];
+            
             Fk = eye(9) + F * dt;
         end
         %-----------------------------------------------------------
