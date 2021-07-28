@@ -91,6 +91,7 @@ classdef INS
             % Initialization
             updatePnb = zeros(3, 1);
             updateVnb = zeros(3, 1);
+            pnbDot = zeros(3, 1);
             
             % Attitude Update using Quaternion
             switch(flag)
@@ -145,11 +146,10 @@ classdef INS
                             pnbDot(2) = updateVnb(2) / ((Re + pnb(3)) * cos(pnb(1)));
                             
                             updatePnb(2) = pnb(2) + 1/2 * (pnbDot(2) + pnbDotPrev(2)) * dt;
-                            pnbDotPrev = pnbDot';
+                            pnbDotPrev = pnbDot;
                             
                         case 'meter'
                             pnbDot = updateVnb;
-                            pnbDot(3) = -pnbDot(3);
                             
                             updatePnb = pnb + 1/2 * (pnbDot + pnbDotPrev) * dt;
                             pnbDotPrev = pnbDot;
@@ -225,8 +225,8 @@ classdef INS
                             % P V Q
                             F11 = Z;
                             %%
-                            %                             F12 = eye(3);
-                            F12 = diag([1; 1; -1]);
+                            F12 = eye(3);
+%                             F12 = diag([1; 1; -1]);
                             %                             F12 = [1/(INS.R0 + updatePnb(3)), 0, 0; 0, 1/(INS.R0 + updatePnb(3)), 0; 0, 0, -1];
                             %                             F12 = [1/(updatePnb(3)), 0, 0; 0, 1/(updatePnb(3)), 0; 0, 0, -1];
                             %%

@@ -256,12 +256,12 @@ classdef vPlotting
             plot(3 * var(2, :), 'r')
             plot(-3 * var(2, :), 'r'); hold off; ylabel('Y [m]');
             xlim([0 max(length(error))]);
-
+            
             subplot(313);plot(error(3, :)); hold on;
             plot(3 * var(3, :), 'r')
             plot(-3 * var(3, :), 'r'); hold off; ylabel('Z [m]');
             xlim([0 max(length(error))]);
-
+            
             xlabel('Time [sec]');
             
             if flag == 1
@@ -283,7 +283,7 @@ classdef vPlotting
             plot(3 * var(5, :), 'r')
             plot(-3 * var(5, :), 'r'); hold off; ylabel('Y [m/s]');
             xlim([0 max(length(error))]);
-
+            
             subplot(313);plot(error(6, :)); hold on;
             plot(3 * var(6, :), 'r')
             plot(-3 * var(6, :), 'r'); hold off; ylabel('Z [m/s]');
@@ -309,7 +309,7 @@ classdef vPlotting
             plot(3 * var(8, :) * vPlotting.r2d, 'r')
             plot(-3 * var(8, :) * vPlotting.r2d, 'r'); hold off; ylabel('Y [Deg]');
             xlim([0 max(length(error))]);
-
+            
             subplot(313);plot(error(9, :) * vPlotting.r2d); hold on;
             plot(3 * var(9, :) * vPlotting.r2d, 'r')
             plot(-3 * var(9, :) * vPlotting.r2d, 'r'); hold off; ylabel('Z [Deg]');
@@ -361,7 +361,7 @@ classdef vPlotting
             plot(3 * var(14, :) * vPlotting.r2d, 'r')
             plot(-3 * var(14, :) * vPlotting.r2d, 'r'); hold off; ylabel('Y [Deg/s]');
             xlim([0 max(length(error))]);
-
+            
             subplot(313);plot(error(15, :) * vPlotting.r2d); hold on;
             plot(3 * var(15, :) * vPlotting.r2d, 'r')
             plot(-3 * var(15, :) * vPlotting.r2d, 'r'); hold off; ylabel('Z [Deg/s]');
@@ -416,7 +416,6 @@ classdef vPlotting
                     ylabel('Y [m]');
                     zlabel('Z [m]');
                     legend('Ground Truth', 'Estimation', 'Start', 'End', 'Location', 'Best', 'Interpreter', 'LaTex');
-                    axis equal;
                     
                     if flag == 1
                         set(gcf, 'PaperSize', [6 4.5]);
