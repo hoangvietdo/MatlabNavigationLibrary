@@ -14,6 +14,9 @@ function [] = makeTemp(varName, var)
         case 'F'
             copyfile('C:\Users\Viet Do\OneDrive\Documents\MatlabCode\MatlabNavigationLibrary\MatlabTemplate\vietMatlabTemplate.m', varName);
             edit(varName);
+        case 'VS'
+            copyfile('C:\Users\Viet Do\OneDrive\Documents\MatlabCode\MatlabNavigationLibrary\MatlabTemplate\vietMatlabTemplateVisionScript.m', varName);
+            edit(varName);
     end
     
 end
